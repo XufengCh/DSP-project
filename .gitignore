@@ -1,2 +1,7 @@
 data/
 rawdata/
+.vscode/
+spec_data/
+logs/
+models/
+*__pycache__/
