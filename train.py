@@ -8,18 +8,18 @@ import numpy as np
 import argparse
 import os
 import json
-import socket
 from datetime import datetime
 
 from dataset import VoiceDataset
+from model import build_model
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--log_dir', default='logs/', type=str)
 parser.add_argument('--save_dir', default='models/', type=str)
-parser.add_argument('--max_iter', default=50000, type=str)
+parser.add_argument('--max_iter', default=500000, type=str)
 parser.add_argument('--resume', default=None, type=str)
 parser.add_argument('--dataset', default='data_15_12.json', type=str)
-parser.add_argument('--batch_size', default=4, type=int)
+parser.add_argument('--batch_size', default=16, type=int)
 
 args = parser.parse_args()
 
@@ -28,17 +28,17 @@ gpu_id = 2
 device = torch.device('cuda:' + str(gpu_id) if torch.cuda.is_available() else 'cpu')
 
 
-def build_model(path=None):
-    model = torchvision.models.resnet34(num_classes=20)
-    optimizer = optim.Adam(model.parameters(), lr=1e-3, weight_decay=5e-4)
+# def build_model(path=None):
+#     model = torchvision.models.resnet101(num_classes=20)
+#     optimizer = optim.Adam(model.parameters(), lr=1e-3, weight_decay=5e-4)
 
-    if path is not None:
-        checkpoint = torch.load(path)
-        model.load_state_dict(checkpoint['state_dict'])
-        optimizer.load_state_dict(checkpoint['optimizer'])
-        print('Loading {}...'.format(path))
+#     if path is not None:
+#         checkpoint = torch.load(path)
+#         model.load_state_dict(checkpoint['state_dict'])
+#         optimizer.load_state_dict(checkpoint['optimizer'])
+#         print('Loading {}...'.format(path))
 
-    return model, optimizer
+#     return model, optimizer
 
 
 def get_iter_epoch(name:str):
@@ -78,7 +78,7 @@ def train():
     data_loader = DataLoader(dataset, args.batch_size)
 
     # Logging into tensorboard
-    log_dir = os.path.join(args.log_dir, dataset_name + datetime.now().strftime('%b%d_%H-%M-%S') + '_' + socket.gethostname())
+    log_dir = os.path.join(args.log_dir, dataset_name + '_' + datetime.now().strftime('%b%d_%H-%M-%S'))
     writer = SummaryWriter(log_dir)
 
     # model
@@ -129,9 +129,10 @@ def train():
 
                 writer.add_scalar('loss', avg_loss, iteration)
                 print('[Epoch: %d || iteration: %d || Loss: %f]' % (epoch, iteration, avg_loss))
+                losses = 0
 
             # save model
-            if iteration % 1000 == 0:
+            if iteration % 2000 == 0:
                 print('Saving state, iter: ', iteration)
                 save_state(model, optimizer, dataset_name, epoch, iteration)
 

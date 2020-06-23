@@ -26,7 +26,8 @@ class VoiceDataset(torch.utils.data.Dataset):
         self.items = []
 
         for stu in stu_dirs:
-            stu_dir = os.path.join(BASE_PATH, stu)
+            # stu_dir = os.path.join(BASE_PATH, stu)
+            stu_dir = os.path.join(SPEC_BASE, stu)
             for word in range(0, 20):
                 word_dir = os.path.join(stu_dir, str(word))
                 files = os.listdir(word_dir)
@@ -44,48 +45,9 @@ class VoiceDataset(torch.utils.data.Dataset):
         # 读取语音文件
         path, word = self.items[index]
 
-        audio = wave.open(path, 'rb')
+        img = Image.open(path)
 
-        params = audio.getparams()
-        nchannels, sampwidth, framerate, nframes = params[:4]
-
-        data = audio.readframes(nframes)
-        audio.close()
-
-        # data = np.fromstring(data, dtype=np.int16)
-        data = np.frombuffer(data, dtype=np.int16)
-
-        # 统一采样频率
-        data = data.astype(np.float)
-        data = librosa.resample(data, framerate, 8000)
-
-        # 得到语谱图
-        spec = extract_feature(data, WINDOW_TIME, 8000)
-        # print('max: {}'.format(np.max(spec)))
-
-        # 语谱图归一化到0 ~ 1.0的灰度图像
-        # spec = normalize(spec, amp=1.0)
-        # # spec = spec.astype(np.uint8)
-        # print(spec.dtype)
-        # spec = spec.astype(np.float32)
-
-        spec = normalize(spec, amp=255.0)
-        spec = spec.astype(np.uint8)
-        # print(spec.dtype)
-        # spec = spec.astype(np.float32)
-
-        # 灰度图转三通道图像
-        spec_RGB = cv2.cvtColor(spec, cv2.COLOR_GRAY2RGB)
-        # print(type(spec_RGB))
-        # print(spec_RGB.dtype)
-        # print(spec_RGB.shape)
-
-        spec_RGB = normalize(spec_RGB, amp=255.0)
-        spec_RGB = spec_RGB.astype(np.uint8)
-        # exit()
-
-        # 对图像进行变换
-        input_tensor = self.transform(Image.fromarray(spec_RGB))
+        input_tensor = self.transform(img)
 
         # 输出特征 类别
         return input_tensor, word
